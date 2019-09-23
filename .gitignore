@@ -1,0 +1,12 @@
+# Byte-compiled / optimized / DLL files
+.vscode
+# C extensions
+*.so
+*.pyx
+.pxi
+pandas/
+pandas-profiling-master/
+*.html
+*.xml
+*.pyc
+*.pdf
