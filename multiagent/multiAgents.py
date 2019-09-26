@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-02-13 23:34:14
-@LastEditTime: 2019-09-26 10:51:54
+@LastEditTime: 2019-09-26 11:37:04
 @LastEditors: Please set LastEditors
 '''
 # multiAgents.py
@@ -125,8 +125,10 @@ class ReflexAgent(Agent):
                 newPos, capsule) for capsule in newCapsules)
             capsuleScore = - nearestCapsulesDistance
 
+        scaredTimeScore = sum(newScaredTimes)
+
         newScore = currenctScore + foodScore + \
-            ghostScore + capsuleScore + sum(newScaredTimes)
+            ghostScore + capsuleScore + scaredTimeScore
 
         return newScore
 
@@ -345,7 +347,28 @@ def betterEvaluationFunction(currentGameState):
       Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
       evaluation function (question 5).
 
-      DESCRIPTION: <write something here so we know what you did>
+      DESCRIPTION: 
+      The newScore I desinged is based on currenctScore, but adjusted with the consideration of neareastFoodDistance, 
+      neareastGhostDistance, nearestCapsulesDistance and currentScaredTime.
+
+      1. foodScore: The distance from the current position of pacman to its nearest food. Pacman's goal is to eat all 
+        the food as soon as possible, so the position where pacman has the minimun distance to the nearest food should 
+        has the higher score. That means the weight of foodScore should be negative. In particular, if the nearestFoodDistance
+        is 0, I will add 10 to give it a "bounus". The weight of foodScore is -1.
+
+      2. ghostScore: The distance from the current position of pacman to its nearest ghost. Pacman need to avoid all ghosts, 
+        so the longer the distance from pacman to the closest ghost is, the higher the score is. That means the weight of 
+        foodScore should be positive. In particular, if the nearestGhostDistance is 0, I returned "-infinity" cause we should 
+        absolutely avoid this position. The weight of ghostScore is 2.
+
+      3. capsuleScore: The distance from the current position of pacman to its nearest capsule. Capsules can make the ghost 
+        "sleep" for a moment, which is a good chance for pacman to move around. That means the weight of foodScore should be 
+        negative. Since there are few capsules, I give weight of capsuleScore -2.
+
+      4. scaredTimeScore: The sum of scaredTimer for all ghosts at currentGameState. A higher currentScaredTime means pacman 
+        can move around with more freedom. That means the weight of scaredTimeScore should be positive. The weight of 
+        capsuleScore is 1.
+
     """
     "*** YOUR CODE HERE ***"
     currenPacmanPosition = currentGameState.getPacmanPosition()
@@ -354,8 +377,6 @@ def betterEvaluationFunction(currentGameState):
     currentGhostsPosition = [ghostState.getPosition()
                              for ghostState in currentGhostStates if ghostState.scaredTimer == 0]
     currentCapsulePosition = currentGameState.getCapsules()
-    currentScaredTime = sum([
-        ghostState.scaredTimer for ghostState in currentGhostStates])
 
     currenctScore = currentGameState.getScore()
 
@@ -365,7 +386,7 @@ def betterEvaluationFunction(currentGameState):
             food, currenPacmanPosition) for food in currentFoodsPosition)
         if neareastFoodDistance == 0:
             foodScore -= 10
-        foodScore = -neareastFoodDistance
+        foodScore = -1 * neareastFoodDistance
 
     ghostScore = 0
     if len(currentGhostsPosition):
@@ -381,8 +402,11 @@ def betterEvaluationFunction(currentGameState):
             currenPacmanPosition, capsule) for capsule in currentCapsulePosition)
         capsuleScore = -2 * nearestCapsulesDistance
 
+    scaredTimeScore = 1 * sum([
+        ghostState.scaredTimer for ghostState in currentGhostStates])
+
     newScore = currenctScore + foodScore + \
-        ghostScore + capsuleScore + currentScaredTime
+        ghostScore + capsuleScore + scaredTimeScore
 
     return newScore
 
