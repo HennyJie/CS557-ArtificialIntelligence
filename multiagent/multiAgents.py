@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-02-13 23:34:14
-@LastEditTime: 2019-09-25 19:24:26
+@LastEditTime: 2019-09-25 22:17:23
 @LastEditors: Please set LastEditors
 '''
 # multiAgents.py
@@ -255,8 +255,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         alpha = -float("inf")
         beta = float("inf")
         for action in gameState.getLegalActions(0):
-            nextGameState = gameState.generateSuccessor(0, action)
-            nextValue = minValue(nextGameState, alpha, beta,
+            nextState = gameState.generateSuccessor(0, action)
+            nextValue = minValue(nextState, alpha, beta,
                                  1, 0, totalGhostAgentsNumber)
             if nextValue > value:
                 value = nextValue
@@ -279,7 +279,41 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def maxValue(gameState, depth, totalGhostAgentsNumber):
+            if depth == self.depth or gameState.isWin() or gameState.isLose():
+                return self.evaluationFunction(gameState)
+            value = -float("inf")
+            for action in gameState.getLegalActions(0):
+                nextState = gameState.generateSuccessor(0, action)
+                value = max(value, expectValue(nextState, 1, depth,
+                                               totalGhostAgentsNumber))
+            return value
+
+        def expectValue(gameState, agentIndex, depth, totalGhostAgentsNumber):
+            if gameState.isWin() or gameState.isLose():
+                return self.evaluationFunction(gameState)
+            value = 0
+            allPossibilitesNumber = len(gameState.getLegalActions(agentIndex))
+            for action in gameState.getLegalActions(agentIndex):
+                nextState = gameState.generateSuccessor(agentIndex, action)
+                if agentIndex == totalGhostAgentsNumber:
+                    value += maxValue(nextState, depth+1,
+                                      totalGhostAgentsNumber) / allPossibilitesNumber
+                else:
+                    value += expectValue(nextState, agentIndex+1, depth,
+                                         totalGhostAgentsNumber) / allPossibilitesNumber
+            return value
+
+        totalGhostAgentsNumber = gameState.getNumAgents() - 1
+        value = -float("inf")
+        bestAction = None
+        for action in gameState.getLegalActions(0):
+            nextState = gameState.generateSuccessor(0, action)
+            nextValue = expectValue(nextState, 1, 0, totalGhostAgentsNumber)
+            if nextValue > value:
+                value = nextValue
+                bestAction = action
+        return bestAction
 
 
 def betterEvaluationFunction(currentGameState):
@@ -290,7 +324,34 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    currenPacmanPosition = currentGameState.getPacmanPosition()
+    currentFoodsPosition = currentGameState.getFood().asList()
+    currentGhostStates = currentGameState.getGhostStates()
+    currentGhostsPosition = [ghostState.getPosition()
+                             for ghostState in currentGhostStates if ghostState.scaredTimer == 0]
+    currentCapsulePosition = currentGameState.getCapsules()
+
+    currenctScore = currentGameState.getScore()
+    # if currentGameState.isWin():
+    #     newScore = oldScore + 1000
+    # if currentGameState.isLose():
+    #     newScore = oldScore - 1000
+
+    neareastFoodDistance = min(util.manhattanDistance(
+        food, currenPacmanPosition) for food in currentFoodsPosition)
+    foodScore = neareastFoodDistance
+
+    neareastGhostDistance = min(util.manhattanDistance(
+        ghost, currenPacmanPosition) for ghost in currentGhostsPosition)
+    ghostScore = 2 * neareastGhostDistance
+
+    nearestCapsulesDistance = min(util.manhattanDistance(
+        currenPacmanPosition, capsule) for capsule in currentCapsulePosition)
+    capsuleScore = nearestCapsulesDistance
+
+    newScore = currenctScore - foodScore + 2*ghostScore + capsuleScore
+
+    return newScore
 
 
 # Abbreviation
