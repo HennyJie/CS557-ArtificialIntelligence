@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-02-13 23:34:14
-@LastEditTime: 2019-09-25 22:17:23
+@LastEditTime: 2019-09-26 10:51:54
 @LastEditors: Please set LastEditors
 '''
 # multiAgents.py
@@ -85,35 +85,50 @@ class ReflexAgent(Agent):
         """
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
-        # print "successorGameState: ", successorGameState
-
         newPos = successorGameState.getPacmanPosition()
-        # print "newPos: ", newPos
-
         currentFood = currentGameState.getFood()  # food available from current state
-        # print "currentFood: ", currentFood
-
         # food available from successor state (excludes food@successor)
         newFood = successorGameState.getFood()
-        # print "newFood: ", newFood
-
         # power pellets/capsules available from current state
         currentCapsules = currentGameState.getCapsules()
-        # print "currentCapsules: ", currentCapsules
-
         # capsules available from successor (excludes capsules@successor)
         newCapsules = successorGameState.getCapsules()
-        # print "newCapsules: ", newCapsules
-
         newGhostStates = successorGameState.getGhostStates()
-        # print "newGhostStates: ", newGhostStates
-
         newScaredTimes = [
             ghostState.scaredTimer for ghostState in newGhostStates]
-        # print "newScaredTimes: ", newScaredTimes
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        currenctScore = successorGameState.getScore()
+
+        foodScore = 0
+        newFoodPositions = newFood.asList()
+        if len(newFoodPositions):
+            neareastFoodDistance = min(util.manhattanDistance(
+                food, newPos) for food in newFoodPositions)
+            if neareastFoodDistance == 0:
+                foodScore -= 10
+            foodScore = -neareastFoodDistance
+
+        ghostScore = 0
+        newGhostPositions = [ghostState.getPosition()
+                             for ghostState in newGhostStates if ghostState.scaredTimer == 0]
+        if len(newGhostPositions):
+            neareastGhostDistance = min(util.manhattanDistance(
+                ghost, newPos) for ghost in newGhostPositions)
+            if neareastGhostDistance == 0:
+                return float("-inf")
+            ghostScore = 2 * neareastGhostDistance
+
+        capsuleScore = 0
+        if len(newCapsules):
+            nearestCapsulesDistance = min(util.manhattanDistance(
+                newPos, capsule) for capsule in newCapsules)
+            capsuleScore = - nearestCapsulesDistance
+
+        newScore = currenctScore + foodScore + \
+            ghostScore + capsuleScore + sum(newScaredTimes)
+
+        return newScore
 
 
 def scoreEvaluationFunction(currentGameState):
@@ -196,15 +211,14 @@ class MinimaxAgent(MultiAgentSearchAgent):
                         nextState, agentIndex+1, depth, totalGhostAgentsNumber))
             return value
 
-        bestAction = None
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
         totalGhostAgentsNumber = gameState.getNumAgents() - 1
-        value = -float("inf")
-        for action in gameState.getLegalActions(0):
-            nextState = gameState.generateSuccessor(0, action)
-            nextValue = minValue(nextState, 1, 0, totalGhostAgentsNumber)
-            if nextValue > value:
-                value = nextValue
-                bestAction = action
+        legalActions = gameState.getLegalActions(0)
+
+        bestAction = max(legalActions, key=lambda action: minValue(
+            gameState.generateSuccessor(0, action), 1, 0, totalGhostAgentsNumber))
 
         return bestAction
 
@@ -249,6 +263,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 beta = min(beta, value)
             return value
 
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
         bestAction = None
         totalGhostAgentsNumber = gameState.getNumAgents() - 1
         value = -float("inf")
@@ -280,39 +297,46 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         def maxValue(gameState, depth, totalGhostAgentsNumber):
-            if depth == self.depth or gameState.isWin() or gameState.isLose():
+            legalActions = gameState.getLegalActions(0)
+            if not legalActions or depth == self.depth or gameState.isWin() or gameState.isLose():
                 return self.evaluationFunction(gameState)
             value = -float("inf")
-            for action in gameState.getLegalActions(0):
+            for action in legalActions:
                 nextState = gameState.generateSuccessor(0, action)
                 value = max(value, expectValue(nextState, 1, depth,
                                                totalGhostAgentsNumber))
             return value
 
         def expectValue(gameState, agentIndex, depth, totalGhostAgentsNumber):
-            if gameState.isWin() or gameState.isLose():
+            legalActions = gameState.getLegalActions(agentIndex)
+            if not legalActions or gameState.isWin() or gameState.isLose():
                 return self.evaluationFunction(gameState)
+
             value = 0
-            allPossibilitesNumber = len(gameState.getLegalActions(agentIndex))
+            probability = 1.0 / len(legalActions)
+
             for action in gameState.getLegalActions(agentIndex):
                 nextState = gameState.generateSuccessor(agentIndex, action)
                 if agentIndex == totalGhostAgentsNumber:
                     value += maxValue(nextState, depth+1,
-                                      totalGhostAgentsNumber) / allPossibilitesNumber
+                                      totalGhostAgentsNumber) * probability
                 else:
                     value += expectValue(nextState, agentIndex+1, depth,
-                                         totalGhostAgentsNumber) / allPossibilitesNumber
+                                         totalGhostAgentsNumber) * probability
             return value
 
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
         totalGhostAgentsNumber = gameState.getNumAgents() - 1
-        value = -float("inf")
-        bestAction = None
-        for action in gameState.getLegalActions(0):
-            nextState = gameState.generateSuccessor(0, action)
-            nextValue = expectValue(nextState, 1, 0, totalGhostAgentsNumber)
-            if nextValue > value:
-                value = nextValue
-                bestAction = action
+        legalActions = gameState.getLegalActions(0)
+
+        # bestAction = max(expectValue(gameState.generateSuccessor(
+        #     0, action), 1, 0, totalGhostAgentsNumber) for action in legalActions)
+
+        bestAction = max(legalActions, key=lambda action: expectValue(
+            gameState.generateSuccessor(0, action), 1, 0, totalGhostAgentsNumber))
+
         return bestAction
 
 
@@ -330,26 +354,35 @@ def betterEvaluationFunction(currentGameState):
     currentGhostsPosition = [ghostState.getPosition()
                              for ghostState in currentGhostStates if ghostState.scaredTimer == 0]
     currentCapsulePosition = currentGameState.getCapsules()
+    currentScaredTime = sum([
+        ghostState.scaredTimer for ghostState in currentGhostStates])
 
     currenctScore = currentGameState.getScore()
-    # if currentGameState.isWin():
-    #     newScore = oldScore + 1000
-    # if currentGameState.isLose():
-    #     newScore = oldScore - 1000
 
-    neareastFoodDistance = min(util.manhattanDistance(
-        food, currenPacmanPosition) for food in currentFoodsPosition)
-    foodScore = neareastFoodDistance
+    foodScore = 0
+    if len(currentFoodsPosition):
+        neareastFoodDistance = min(util.manhattanDistance(
+            food, currenPacmanPosition) for food in currentFoodsPosition)
+        if neareastFoodDistance == 0:
+            foodScore -= 10
+        foodScore = -neareastFoodDistance
 
-    neareastGhostDistance = min(util.manhattanDistance(
-        ghost, currenPacmanPosition) for ghost in currentGhostsPosition)
-    ghostScore = 2 * neareastGhostDistance
+    ghostScore = 0
+    if len(currentGhostsPosition):
+        neareastGhostDistance = min(util.manhattanDistance(
+            ghost, currenPacmanPosition) for ghost in currentGhostsPosition)
+        if neareastGhostDistance == 0:
+            return float("-inf")
+        ghostScore = 2 * neareastGhostDistance
 
-    nearestCapsulesDistance = min(util.manhattanDistance(
-        currenPacmanPosition, capsule) for capsule in currentCapsulePosition)
-    capsuleScore = nearestCapsulesDistance
+    capsuleScore = 0
+    if len(currentCapsulePosition):
+        nearestCapsulesDistance = min(util.manhattanDistance(
+            currenPacmanPosition, capsule) for capsule in currentCapsulePosition)
+        capsuleScore = -2 * nearestCapsulesDistance
 
-    newScore = currenctScore - foodScore + 2*ghostScore + capsuleScore
+    newScore = currenctScore + foodScore + \
+        ghostScore + capsuleScore + currentScaredTime
 
     return newScore
 
