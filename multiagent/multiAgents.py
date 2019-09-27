@@ -2,8 +2,8 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-02-13 23:34:14
-@LastEditTime: 2019-09-26 23:37:51
-@LastEditors: Please set LastEditors
+@LastEditTime: 2014-02-13 23:34:14
+@LastEditors: your name
 '''
 # multiAgents.py
 # --------------
@@ -386,7 +386,7 @@ def betterEvaluationFunction(currentGameState):
         neareastFoodDistance = min(util.manhattanDistance(
             food, currenPacmanPosition) for food in currentFoodsPosition)
         if neareastFoodDistance == 0:
-            foodScore += 10
+            foodScore += 50
         foodScore += -1 * neareastFoodDistance
 
     ghostScore = 0
@@ -395,7 +395,7 @@ def betterEvaluationFunction(currentGameState):
             ghost, currenPacmanPosition) for ghost in currentGhostsPosition)
         if neareastGhostDistance == 0:
             return float("-inf")
-        ghostScore += 2 * neareastGhostDistance
+        ghostScore += 3 * neareastGhostDistance
 
     capsuleScore = 0
     if len(currentCapsulePosition):
@@ -428,6 +428,11 @@ class ContestAgent(MultiAgentSearchAgent):
 
           Ghosts don't behave randomly anymore, but they aren't perfect either -- they'll usually
           just make a beeline straight towards Pacman (or away from him if they're scared!)
+
+          DESCRIPTION: I combine the AlphaBetaAgent with betterEvaluationFunction to realize a better 
+          trade off of speed and computation. I have tried a several parameters for the weight of foodScore,
+          ghostScore, Capsule score and scaredTimeScore. It seems that the weights of these parameters 
+          do make a great a difference on the performance of the contestAgent.
         """
         "*** YOUR CODE HERE ***"
 
