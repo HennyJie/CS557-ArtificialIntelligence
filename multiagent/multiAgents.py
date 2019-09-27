@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-02-13 23:34:14
-@LastEditTime: 2019-09-26 11:37:04
+@LastEditTime: 2019-09-26 23:37:51
 @LastEditors: Please set LastEditors
 '''
 # multiAgents.py
@@ -236,16 +236,25 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         def maxValue(gameState, alpha, beta, depth, totalGhostAgentsNumber):
-            if depth == self.depth or gameState.isWin() or gameState.isLose():
+            legalActions = gameState.getLegalActions(0)
+            if not legalActions or depth == self.depth or gameState.isWin() or gameState.isLose():
                 return self.evaluationFunction(gameState)
             value = -float("inf")
-            for action in gameState.getLegalActions(0):
+            if depth == 0:
+                bestAction = legalActions[0]
+            for action in legalActions:
                 nextState = gameState.generateSuccessor(0, action)
-                value = max(value, minValue(nextState, alpha, beta,
-                                            1, depth, totalGhostAgentsNumber))
+                newValue = minValue(nextState, alpha, beta,
+                                    1, depth, totalGhostAgentsNumber)
+                if newValue > value:
+                    value = newValue
+                    if depth == 0:
+                        bestAction = action
                 if value > beta:
                     return value
                 alpha = max(alpha, value)
+            if depth == 0:
+                return bestAction
             return value
 
         def minValue(gameState, alpha, beta, agentIndex, depth, totalGhostAgentsNumber):
@@ -268,19 +277,11 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState)
 
-        bestAction = None
         totalGhostAgentsNumber = gameState.getNumAgents() - 1
-        value = -float("inf")
         alpha = -float("inf")
         beta = float("inf")
-        for action in gameState.getLegalActions(0):
-            nextState = gameState.generateSuccessor(0, action)
-            nextValue = minValue(nextState, alpha, beta,
-                                 1, 0, totalGhostAgentsNumber)
-            if nextValue > value:
-                value = nextValue
-                bestAction = action
-            alpha = max(alpha, value)
+        bestAction = maxValue(gameState, alpha, beta,
+                              0, totalGhostAgentsNumber)
 
         return bestAction
 
@@ -385,8 +386,8 @@ def betterEvaluationFunction(currentGameState):
         neareastFoodDistance = min(util.manhattanDistance(
             food, currenPacmanPosition) for food in currentFoodsPosition)
         if neareastFoodDistance == 0:
-            foodScore -= 10
-        foodScore = -1 * neareastFoodDistance
+            foodScore += 10
+        foodScore += -1 * neareastFoodDistance
 
     ghostScore = 0
     if len(currentGhostsPosition):
@@ -394,13 +395,13 @@ def betterEvaluationFunction(currentGameState):
             ghost, currenPacmanPosition) for ghost in currentGhostsPosition)
         if neareastGhostDistance == 0:
             return float("-inf")
-        ghostScore = 2 * neareastGhostDistance
+        ghostScore += 2 * neareastGhostDistance
 
     capsuleScore = 0
     if len(currentCapsulePosition):
         nearestCapsulesDistance = min(util.manhattanDistance(
             currenPacmanPosition, capsule) for capsule in currentCapsulePosition)
-        capsuleScore = -2 * nearestCapsulesDistance
+        capsuleScore += -2 * nearestCapsulesDistance
 
     scaredTimeScore = 1 * sum([
         ghostState.scaredTimer for ghostState in currentGhostStates])
@@ -429,4 +430,58 @@ class ContestAgent(MultiAgentSearchAgent):
           just make a beeline straight towards Pacman (or away from him if they're scared!)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+    def getAction(self, gameState):
+        """
+          Returns the minimax action using self.depth and self.evaluationFunction
+        """
+        "*** YOUR CODE HERE ***"
+        def maxValue(gameState, alpha, beta, depth, totalGhostAgentsNumber):
+            legalActions = gameState.getLegalActions(0)
+            if not legalActions or depth == self.depth or gameState.isWin() or gameState.isLose():
+                return betterEvaluationFunction(gameState)
+            value = -float("inf")
+            if depth == 0:
+                bestAction = legalActions[0]
+            for action in legalActions:
+                nextState = gameState.generateSuccessor(0, action)
+                newValue = minValue(nextState, alpha, beta,
+                                    1, depth, totalGhostAgentsNumber)
+                if newValue > value:
+                    value = newValue
+                    if depth == 0:
+                        bestAction = action
+                if value > beta:
+                    return value
+                alpha = max(alpha, value)
+            if depth == 0:
+                return bestAction
+            return value
+
+        def minValue(gameState, alpha, beta, agentIndex, depth, totalGhostAgentsNumber):
+            if gameState.isWin() or gameState.isLose():
+                return betterEvaluationFunction(gameState)
+            value = float("inf")
+            for action in gameState.getLegalActions(agentIndex):
+                nextState = gameState.generateSuccessor(agentIndex, action)
+                if agentIndex == totalGhostAgentsNumber:
+                    value = min(value, maxValue(nextState, alpha, beta,
+                                                depth+1, totalGhostAgentsNumber))
+                else:
+                    value = min(value, minValue(nextState, alpha, beta,
+                                                agentIndex+1, depth, totalGhostAgentsNumber))
+                if value < alpha:
+                    return value
+                beta = min(beta, value)
+            return value
+
+        if gameState.isWin() or gameState.isLose():
+            return betterEvaluationFunction(gameState)
+
+        totalGhostAgentsNumber = gameState.getNumAgents() - 1
+        alpha = -float("inf")
+        beta = float("inf")
+        bestAction = maxValue(gameState, alpha, beta,
+                              0, totalGhostAgentsNumber)
+
+        return bestAction
