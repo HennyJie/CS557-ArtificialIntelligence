@@ -10,3 +10,7 @@ pandas-profiling-master/
 *.xml
 *.pyc
 *.pdf
+*.solution
+*.test
+*.lay
+CONFIG

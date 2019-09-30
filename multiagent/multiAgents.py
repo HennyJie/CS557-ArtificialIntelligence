@@ -1,10 +1,3 @@
-'''
-@Description: In User Settings Edit
-@Author: your name
-@Date: 2014-02-13 23:34:14
-@LastEditTime: 2014-02-13 23:34:14
-@LastEditors: your name
-'''
 # multiAgents.py
 # --------------
 # Licensing Information:  You are free to use or extend these projects for
@@ -355,12 +348,12 @@ def betterEvaluationFunction(currentGameState):
       1. foodScore: The distance from the current position of pacman to its nearest food. Pacman's goal is to eat all 
         the food as soon as possible, so the position where pacman has the minimun distance to the nearest food should 
         has the higher score. That means the weight of foodScore should be negative. In particular, if the nearestFoodDistance
-        is 0, I will add 10 to give it a "bounus". The weight of foodScore is -1.
+        is 0, I will add 50 to give it a "bounus". The weight of foodScore is -1.
 
       2. ghostScore: The distance from the current position of pacman to its nearest ghost. Pacman need to avoid all ghosts, 
         so the longer the distance from pacman to the closest ghost is, the higher the score is. That means the weight of 
         foodScore should be positive. In particular, if the nearestGhostDistance is 0, I returned "-infinity" cause we should 
-        absolutely avoid this position. The weight of ghostScore is 2.
+        absolutely avoid this position. The weight of ghostScore is 3.
 
       3. capsuleScore: The distance from the current position of pacman to its nearest capsule. Capsules can make the ghost 
         "sleep" for a moment, which is a good chance for pacman to move around. That means the weight of foodScore should be 
