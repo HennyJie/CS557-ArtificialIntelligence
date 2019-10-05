@@ -2,8 +2,8 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-01-28 15:26:32
-@LastEditTime: 2014-01-28 15:26:32
-@LastEditors: your name
+@LastEditTime: 2019-10-05 17:44:47
+@LastEditors: Please set LastEditors
 '''
 # bustersAgents.py
 # ----------------
@@ -172,5 +172,32 @@ class GreedyBustersAgent(BustersAgent):
         livingGhostPositionDistributions = [beliefs for i, beliefs
                                             in enumerate(self.ghostBeliefs)
                                             if livingGhosts[i+1]]
-        "*** YOUR CODE HERE ***"
-        # util.raiseNotDefined()
+        # "*** YOUR CODE HERE ***"
+        possibleGhostPositions = []
+
+        for livingGhostPositionDistribution in livingGhostPositionDistributions:
+            maxProbPos = livingGhostPositionDistribution.argMax()
+            possibleGhostPositions.append(maxProbPos)
+
+        closestGhostDistance = float("inf")
+        closestGhostPosition = None
+
+        for ghostPossition in possibleGhostPositions:
+            distance = self.distancer.getDistance(
+                pacmanPosition, ghostPossition)
+            if distance < closestGhostDistance:
+                closestGhostDistance = distance
+                closestGhostPosition = ghostPossition
+
+        bestAction = None
+        closestDistanceAfterAction = float("inf")
+
+        for action in legal:
+            successorPosition = Actions.getSuccessor(pacmanPosition, action)
+            distanceAfterAction = self.distancer.getDistance(
+                successorPosition, closestGhostPosition)
+            if distanceAfterAction < closestDistanceAfterAction:
+                closestDistanceAfterAction = distanceAfterAction
+                bestAction = action
+
+        return bestAction
