@@ -1,3 +1,10 @@
+'''
+@Description: In User Settings Edit
+@Author: your name
+@Date: 2014-01-28 15:26:32
+@LastEditTime: 2014-01-28 15:26:32
+@LastEditors: your name
+'''
 # bustersAgents.py
 # ----------------
 # Licensing Information:  You are free to use or extend these projects for
@@ -166,4 +173,4 @@ class GreedyBustersAgent(BustersAgent):
                                             in enumerate(self.ghostBeliefs)
                                             if livingGhosts[i+1]]
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
