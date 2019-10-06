@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-01-28 15:26:32
-@LastEditTime: 2019-10-05 13:44:42
+@LastEditTime: 2019-10-05 22:46:38
 @LastEditors: Please set LastEditors
 '''
 # inference.py
@@ -274,6 +274,12 @@ class ParticleFilter(InferenceModule):
             and will produce errors
         """
         "*** YOUR CODE HERE ***"
+        self.particles = []
+        legalPositionsNum = len(self.legalPositions)
+        particleNumForEachLegalPosition = self.numParticles / legalPositionsNum
+        for position in self.legalPositions:
+            for i in range(particleNumForEachLegalPosition):
+                self.particles.append(position)
 
     def observe(self, observation, gameState):
         """
@@ -308,7 +314,22 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        allPossible = util.Counter()
+        belief = self.getBeliefDistribution()
+        self.particles = []
+
+        if noisyDistance == None:
+            self.particles = [self.getJailPosition()] * self.numParticles
+        else:
+            for p in self.legalPositions:
+                distance = util.manhattanDistance(p, pacmanPosition)
+                allPossible[p] = emissionModel[distance] * belief[p]
+
+            if allPossible.totalCount() == 0:
+                self.initializeUniformly(gameState)
+            else:
+                for i in range(self.numParticles):
+                    self.particles.append(util.sample(allPossible))
 
     def elapseTime(self, gameState):
         """
@@ -326,7 +347,13 @@ class ParticleFilter(InferenceModule):
         belief distribution
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        particles = []
+        for oldPos in self.particles:
+            newPosDist = self.getPositionDistribution(
+                self.setGhostPosition(gameState, oldPos))
+            sample = util.sample(newPosDist)
+            particles.append(sample)
+        self.particles = particles
 
     def getBeliefDistribution(self):
         """
@@ -335,7 +362,13 @@ class ParticleFilter(InferenceModule):
           essentially converts a list of particles into a belief distribution (a Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        beliefDistribution = util.Counter()
+
+        for particle in self.particles:
+            beliefDistribution[particle] += 1
+        beliefDistribution.normalize()
+
+        return beliefDistribution
 
 
 class MarginalInference(InferenceModule):
