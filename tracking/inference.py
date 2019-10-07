@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-01-28 15:26:32
-@LastEditTime: 2019-10-05 22:46:38
+@LastEditTime: 2019-10-06 18:19:21
 @LastEditors: Please set LastEditors
 '''
 # inference.py
@@ -438,6 +438,18 @@ class JointParticleFilter:
 
         """
         "*** YOUR CODE HERE ***"
+        self.particles = []
+        ghostPositionsList = list(itertools.product(
+            self.legalPositions, repeat=self.numGhosts))
+        random.shuffle(ghostPositionsList)
+        legalGhostPositionsNum = len(ghostPositionsList)
+        particleNumForEachLegalPosition = self.numParticles / legalGhostPositionsNum
+        for ghostPositions in ghostPositionsList:
+            for i in range(particleNumForEachLegalPosition):
+                self.particles.append(ghostPositions)
+        # print(self.particles)
+        # self.particles = tuple(self.particles)
+        # print(self.particles)
 
     def addGhostAgent(self, agent):
         "Each ghost agent is registered separately and stored (in case they are different)."
@@ -484,6 +496,24 @@ class JointParticleFilter:
             return
         emissionModels = [busters.getObservationDistribution(
             dist) for dist in noisyDistances]
+        print "emissionModels: ", emissionModels
+
+        # allPossible = util.Counter()
+        # belief = self.getBeliefDistribution()
+        # self.particles = []
+
+        # if noisyDistances == None:
+        #     self.particles = [self.getJailPosition()] * self.numParticles
+        # else:
+        #     for p in self.legalPositions:
+        #         distance = util.manhattanDistance(p, pacmanPosition)
+        #         allPossible[p] = emissionModels[distance] * belief[p]
+
+        #     if allPossible.totalCount() == 0:
+        #         self.initializeUniformly(gameState)
+        #     else:
+        #         for i in range(self.numParticles):
+        #             self.particles.append(util.sample(allPossible))
 
         "*** YOUR CODE HERE ***"
 
@@ -546,7 +576,12 @@ class JointParticleFilter:
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
+        beliefDistribution = util.Counter()
+        for particle in self.particles:
+            beliefDistribution[particle] += 1
+        beliefDistribution.normalize()
+        return beliefDistribution
 
 
 # One JointInference module is shared globally across instances of MarginalInference
