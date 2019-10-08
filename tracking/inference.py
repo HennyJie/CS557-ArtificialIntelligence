@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-01-28 15:26:32
-@LastEditTime: 2019-10-06 18:19:21
+@LastEditTime: 2019-10-08 11:13:16
 @LastEditors: Please set LastEditors
 '''
 # inference.py
@@ -329,7 +329,8 @@ class ParticleFilter(InferenceModule):
                 self.initializeUniformly(gameState)
             else:
                 for i in range(self.numParticles):
-                    self.particles.append(util.sample(allPossible))
+                    sample = util.sample(allPossible)
+                    self.particles.append(sample)
 
     def elapseTime(self, gameState):
         """
@@ -438,18 +439,17 @@ class JointParticleFilter:
 
         """
         "*** YOUR CODE HERE ***"
-        self.particles = []
         ghostPositionsList = list(itertools.product(
             self.legalPositions, repeat=self.numGhosts))
         random.shuffle(ghostPositionsList)
         legalGhostPositionsNum = len(ghostPositionsList)
-        particleNumForEachLegalPosition = self.numParticles / legalGhostPositionsNum
+        particleNumForEachLegalPositionS = self.numParticles / legalGhostPositionsNum
+        self.particles = []
+
         for ghostPositions in ghostPositionsList:
-            for i in range(particleNumForEachLegalPosition):
+            for i in range(particleNumForEachLegalPositionS):
                 self.particles.append(ghostPositions)
-        # print(self.particles)
-        # self.particles = tuple(self.particles)
-        # print(self.particles)
+        self.particles = tuple(self.particles)
 
     def addGhostAgent(self, agent):
         "Each ghost agent is registered separately and stored (in case they are different)."
@@ -492,28 +492,37 @@ class JointParticleFilter:
         """
         pacmanPosition = gameState.getPacmanPosition()
         noisyDistances = gameState.getNoisyGhostDistances()
+
         if len(noisyDistances) < self.numGhosts:
             return
         emissionModels = [busters.getObservationDistribution(
             dist) for dist in noisyDistances]
-        print "emissionModels: ", emissionModels
 
-        # allPossible = util.Counter()
-        # belief = self.getBeliefDistribution()
-        # self.particles = []
+        allPossible = util.Counter()
 
-        # if noisyDistances == None:
-        #     self.particles = [self.getJailPosition()] * self.numParticles
-        # else:
-        #     for p in self.legalPositions:
-        #         distance = util.manhattanDistance(p, pacmanPosition)
-        #         allPossible[p] = emissionModels[distance] * belief[p]
+        for particle in self.particles:
+            possibility = 1.0
+            for i in range(self.numGhosts):
+                if noisyDistances[i] == None:
+                    particle = self.getParticleWithGhostInJail(particle, i)
+                else:
+                    true_distance = util.manhattanDistance(
+                        pacmanPosition, particle[i])
+                    possibility *= emissionModels[i][true_distance]
+            allPossible[particle] += possibility
 
-        #     if allPossible.totalCount() == 0:
-        #         self.initializeUniformly(gameState)
-        #     else:
-        #         for i in range(self.numParticles):
-        #             self.particles.append(util.sample(allPossible))
+        self.beliefs = allPossible
+        self.particles = []
+
+        if allPossible.totalCount() == 0:
+            self.initializeParticles()
+        else:
+            # self.beliefs.normalize()
+            for i in range(self.numParticles):
+                sample = util.sample(self.beliefs)
+                self.particles.append(sample)
+
+        self.particles = tuple(self.particles)
 
         "*** YOUR CODE HERE ***"
 
