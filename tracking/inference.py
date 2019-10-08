@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-01-28 15:26:32
-@LastEditTime: 2019-10-08 14:52:44
+@LastEditTime: 2019-10-08 15:15:33
 @LastEditors: Please set LastEditors
 '''
 # inference.py
@@ -588,7 +588,6 @@ class JointParticleFilter:
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
-        # util.raiseNotDefined()
         beliefDistribution = util.Counter()
         for particle in self.particles:
             beliefDistribution[particle] += 1
