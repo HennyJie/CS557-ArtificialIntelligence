@@ -2,7 +2,7 @@
 @Description: In User Settings Edit
 @Author: your name
 @Date: 2014-01-28 15:26:32
-@LastEditTime: 2019-10-08 15:15:33
+@LastEditTime: 2019-10-09 20:10:47
 @LastEditors: Please set LastEditors
 '''
 # inference.py
@@ -171,7 +171,10 @@ class ExactInference(InferenceModule):
         #     if emissionModel[trueDistance] > 0:
         #         allPossible[p] = 1.0
         if noisyDistance == None:
-            allPossible[self.getJailPosition()] = 1
+            jailPosition = self.getJailPosition()
+            for p in self.legalPositions:
+                allPossible[p] = 0
+            allPossible[jailPosition] = 1
         else:
             for p in self.legalPositions:
                 trueDistance = util.manhattanDistance(p, pacmanPosition)
@@ -231,7 +234,8 @@ class ExactInference(InferenceModule):
 
         "*** YOUR CODE HERE ***"
         allPossible = util.Counter()
-        for oldPos in self.legalPositions:
+        for legalPosition in self.legalPositions:
+            oldPos = legalPosition
             newPosDist = self.getPositionDistribution(
                 self.setGhostPosition(gameState, oldPos))
             for newPos, prob in newPosDist.items():
@@ -277,6 +281,7 @@ class ParticleFilter(InferenceModule):
         self.particles = []
         legalPositionsNum = len(self.legalPositions)
         particleNumForEachLegalPosition = self.numParticles / legalPositionsNum
+
         for position in self.legalPositions:
             for i in range(particleNumForEachLegalPosition):
                 self.particles.append(position)
@@ -319,11 +324,13 @@ class ParticleFilter(InferenceModule):
         self.particles = []
 
         if noisyDistance == None:
-            self.particles = [self.getJailPosition()] * self.numParticles
+            jailPosition = self.getJailPosition()
+            for i in range(self.numParticles):
+                self.particles.append(jailPosition)
         else:
             for p in self.legalPositions:
                 distance = util.manhattanDistance(p, pacmanPosition)
-                allPossible[p] = emissionModel[distance] * belief[p]
+                allPossible[p] += emissionModel[distance] * belief[p]
 
             if allPossible.totalCount() == 0:
                 self.initializeUniformly(gameState)
@@ -439,16 +446,18 @@ class JointParticleFilter:
 
         """
         "*** YOUR CODE HERE ***"
+        self.particles = []
         ghostPositionsList = list(itertools.product(
             self.legalPositions, repeat=self.numGhosts))
         random.shuffle(ghostPositionsList)
+
         legalGhostPositionsNum = len(ghostPositionsList)
         particleNumForEachLegalPositionS = self.numParticles / legalGhostPositionsNum
-        self.particles = []
 
         for ghostPositions in ghostPositionsList:
             for i in range(particleNumForEachLegalPositionS):
                 self.particles.append(ghostPositions)
+
         self.particles = tuple(self.particles)
 
     def addGhostAgent(self, agent):
@@ -492,16 +501,17 @@ class JointParticleFilter:
         """
         pacmanPosition = gameState.getPacmanPosition()
         noisyDistances = gameState.getNoisyGhostDistances()
-
         if len(noisyDistances) < self.numGhosts:
             return
         emissionModels = [busters.getObservationDistribution(
             dist) for dist in noisyDistances]
 
+        "*** YOUR CODE HERE ***"
         allPossible = util.Counter()
 
         for particle in self.particles:
             possibility = 1.0
+
             for i in range(self.numGhosts):
                 if noisyDistances[i] == None:
                     particle = self.getParticleWithGhostInJail(particle, i)
@@ -517,14 +527,11 @@ class JointParticleFilter:
         if allPossible.totalCount() == 0:
             self.initializeParticles()
         else:
-            # self.beliefs.normalize()
             for i in range(self.numParticles):
                 sample = util.sample(self.beliefs)
                 self.particles.append(sample)
 
         self.particles = tuple(self.particles)
-
-        "*** YOUR CODE HERE ***"
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         particle = list(particle)
@@ -579,8 +586,9 @@ class JointParticleFilter:
 
             "*** YOUR CODE HERE ***"
             for i in range(self.numGhosts):
+                setGhost = setGhostPositions(gameState, newParticle)
                 newPosDist = getPositionDistributionForGhost(
-                    setGhostPositions(gameState, newParticle), i, self.ghostAgents[i])
+                    setGhost, i, self.ghostAgents[i])
                 newParticle[i] = util.sample(newPosDist)
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
@@ -589,7 +597,7 @@ class JointParticleFilter:
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
         beliefDistribution = util.Counter()
-        for particle in self.particles:
+        for particle in list(self.particles):
             beliefDistribution[particle] += 1
         beliefDistribution.normalize()
         return beliefDistribution
