@@ -1,7 +1,7 @@
 '''
 @Author: Hejie Cui
 @Date: 2014-01-28 16:18:32
-@LastEditTime: 2019-10-27 22:59:19
+@LastEditTime: 2019-10-28 21:45:15
 @Description: In User Settings Edit
 '''
 # qlearningAgents.py
@@ -91,17 +91,11 @@ class QLearningAgent(ReinforcementAgent):
         """
         "*** YOUR CODE HERE ***"
         actions = self.getLegalActions(state)
-
         if len(actions) == 0:
             return None
-
         maxQValue = self.computeValueFromQValues(state)
         maxAction = []
         for action in actions:
-            # QValue = self.getQValue(state, action)
-            # if QValue > maxQValue:
-            #     maxQValue = QValue
-            #     maxAction = action
             if maxQValue == self.getQValue(state, action):
                 maxAction.append(action)
 
@@ -123,7 +117,7 @@ class QLearningAgent(ReinforcementAgent):
         action = None
         "*** YOUR CODE HERE ***"
         if len(legalActions) == 0:
-            return action
+            return None
         if util.flipCoin(self.epsilon):
             action = random.choice(legalActions)
         else:
@@ -141,10 +135,8 @@ class QLearningAgent(ReinforcementAgent):
         """
         "*** YOUR CODE HERE ***"
         oldValue = self.getQValue(state, action)
-        newValue = reward + self.discount * \
-            self.computeValueFromQValues(nextState)
-        self.values[(state, action)] = (1 - self.alpha) * \
-            oldValue + self.alpha * newValue
+        sample = reward + self.discount*self.computeValueFromQValues(nextState)
+        self.values[(state, action)] = oldValue + self.alpha*(sample-oldValue)
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
