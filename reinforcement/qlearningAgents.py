@@ -1,7 +1,7 @@
 '''
 @Author: Hejie Cui
 @Date: 2014-01-28 16:18:32
-@LastEditTime: 2019-10-28 21:45:15
+@LastEditTime: 2019-10-31 10:52:50
 @Description: In User Settings Edit
 '''
 # qlearningAgents.py
@@ -200,14 +200,22 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        features = self.featExtractor.getFeatures(state, action)
+        QValue = 0
+        for feature, value in features.items():
+            QValue += value * self.weights[feature]
+        return QValue
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        difference = (reward + self.discount *
+                      self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
+        features = self.featExtractor.getFeatures(state, action)
+        for feature, value in features.items():
+            self.weights[feature] += self.alpha * difference * value
 
     def final(self, state):
         "Called at the end of each game."
